@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>MQTT con JS</title>
+  </head>
+  <body>
+    <h1>MQTT CON JS</h1>
+    <input
+      type="text"
+      id="msgMQTT"
+    />
+    <p id="output_console"></p>
+  </body>
+  <script src="mqtt.js"></script>
+  <script>
+    let msgMQTT = document.getElementById("msgMQTT");
+    let output_console = document.getElementById("output_console");
+    msgMQTT.addEventListener("keyup", (e) => {
+      if (e.keyCode === 13) {
+        console.log("Sending:", msgMQTT.value);
+        client.publish("test", msgMQTT.value);
+        msgMQTT.value = "";
+      }
+    });
+    /***
+     * Browser
+     * This document explains how to use MQTT over WebSocket with the ws and wss protocols.
+     * EMQX's default port for ws connection is 8083 and for wss connection is 8084.
+     * Note that you need to add a path after the connection address, such as /mqtt.
+     */
+    const url = "wss://c098ae50.ala.us-east-1.emqxsl.com:8084/mqtt";
+
+    // Create an MQTT client instance
+    const options = {
+      // Clean session
+      clean: true,
+      connectTimeout: 4000,
+      // Authentication
+      clientId: "emqxjs_" + Math.random().toString(16).substr(2, 8),
+      username: "mqtt",
+      password: "password",
+    };
+
+    const client = mqtt.connect(url, options);
+
+    client.on("connect", function () {
+      console.log("Connected");
+      // Subscribe to a topic
+      client.subscribe("test", function (err) {
+        if (!err) {
+          // Publish a message to a topic
+          console.log("Message is published");
+          client.publish("test", "Hello mqtt from js");
+        }
+      });
+    });
+
+    // Receive messages
+    client.on("message", function (topic, message) {
+      // message is Buffer
+      output_console.innerHTML = message.toString() + "<br>" + output_console.innerHTML;
+      // client.end();
+    });
+  </script>
+</html>

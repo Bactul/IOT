@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MQTT con JS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background-color: #333333;
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        text-align: center;
+        font-family: "Montserrat", sans-serif;
+        background-image: url("https://cdn.pixabay.com/photo/2020/04/09/02/26/tree-5019381_1280.jpg");
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .diseno {
+        display: flex;
+        justify-content: center;
+        flex-direction: row;
+        /* border: 1px solid white; */
+        margin-top: 30px;
+      }
+
+      .padre {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 0px;
+        /* border: 1px solid red; */
+        width: 1000px;
+        height: 600px;
+      }
+
+      .container {
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+        padding: 10px;
+        margin: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 450px;
+        height: 250px;
+        box-sizing: border-box;
+      }
+
+      .msjs {
+        width: 400px;
+        height: 530px;
+        margin: 15px;
+        /* border: 1px solid blue; */
+        overflow: auto;
+      }
+
+      .msjs::-webkit-scrollbar {
+        width: 12px; /* Ancho de la barra de desplazamiento vertical */
+      }
+
+      .msjs::-webkit-scrollbar-thumb {
+        background-color: #ccc; /* Color del pulgar (barra de desplazamiento) */
+      }
+
+      .msjs::-webkit-scrollbar-track {
+        background-color: #555; /* Color de la pista (fondo de la barra de desplazamiento) */
+      }
+
+      .status  p {
+        font-size: 20px;
+        margin: 10px;
+        border-radius: 50px 50px 50px 0;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20px);
+      }
+
+      h1 {
+        color: #fff;
+      }
+
+      h2 {
+        font-size: 30px;
+        color: white;
+      }
+
+      p {
+        color: #fff;
+        font-weight: 800;
+        font-size: 40px;
+      }
+
+      .button-container {
+        margin-top: 20px;
+      }
+
+      button {
+        background-color: #3498db;
+        width: 8em;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button.led_off {
+        background-color: #e74c3c;
+      }
+
+      input[type="text"] {
+        padding: 5px;
+        width: 120px;
+      }
+
+      .temperature,
+      .contador,
+      .humidity,
+      .button-container {
+        width: 100%;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        margin-right: 70px;
+      }
+
+      .material-symbols-outlined {
+        font-size: 80px;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="title">MQTT CON JS</h1>
+    <div class="diseno">
+      <div class="padre">
+        <div class="container">
+          <h1>Encender o apagar LED</h1>
+          <div class="button-container">
+            <div class="icon">
+              <span class="material-symbols-outlined"> bolt </span>
+            </div>
+            <div class="buttons">
+              <button class="led_on" id="toggle">ON</button>
+              <input type="text" id="msgMQTT" />
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <h1>Valor del contador</h1>
+          <div class="contador">
+            <div class="icon">
+              <span class="material-symbols-outlined"> calculate </span>
+            </div>
+            <p id="counter">##</p>
+          </div>
+        </div>
+        <div class="container">
+          <h1>Temperature</h1>
+          <div class="temperature">
+            <div class="icon">
+              <span class="material-symbols-outlined"> device_thermostat </span>
+            </div>
+            <p id="temperature">15.7</p>
+          </div>
+        </div>
+        <div class="container">
+          <h1>Humidity</h1>
+          <div class="humidity">
+            <div class="icon">
+              <span class="material-symbols-outlined"> water_drop </span>
+            </div>
+            <p id="humidity">20.1</p>
+          </div>
+        </div>
+      </div>
+      <div class="status">
+        <h2>Status</h2>
+        <hr />
+        <div class="msjs">
+          <p id="output_console">Led ON</p>
+        </div>
+      </div>
+    </div>
+    <!-- Toggle button for sending JSON -->
+  </body>
+  <script src="mqtt.js"></script>
+  <script>
+    let PUB_TOPIC = "monitores/web_BACANO"
+    let msgMQTT = document.getElementById("msgMQTT");
+    let output_console = document.getElementById("output_console");
+    msgMQTT.addEventListener("keyup", (e) => {
+      if (e.keyCode === 13) {
+        console.log("Sending:", msgMQTT.value);
+        client.publish("test", msgMQTT.value);
+        msgMQTT.value = "";
+      }
+    });
+
+    let toggle = document.getElementById("toggle");
+    toggle.addEventListener("click", (e) => {
+      if (toggle.className == "led_on") {
+        toggle.className = "led_off";
+        toggle.innerHTML = "Encender led";
+        client.publish("test", JSON.stringify({ led: 0 }));
+      } else {
+        toggle.className = "led_on";
+        toggle.innerHTML = "Apagar led";
+        client.publish("test", JSON.stringify({ led: 1 }));
+      }
+    });
+
+    /***
+     * Browser
+     * This document explains how to use MQTT over WebSocket with the ws and wss protocols.
+     * EMQX's default port for ws connection is 8083 and for wss connection is 8084.
+     * Note that you need to add a path after the connection address, such as /mqtt.
+     */
+    const url = "wss://g193e397.ala.us-east-1.emqxsl.com:8084/mqtt";
+
+    // Create an MQTT client instance
+    const options = {
+      // Clean session
+      clean: true,
+      connectTimeout: 4000,
+      // Authentication
+      clientId: "emqxjs_" + Math.random().toString(16).substr(2, 8),
+      username: "mqtt",
+      password: "123",
+    };
+
+    const client = mqtt.connect(url, options);
+
+    client.on("connect", function () {
+      console.log("Connected");
+      // Subscribe to a topic
+      client.subscribe("test", function (err) {
+        if (!err) {
+          // Publish a message to a topic
+          console.log("Message is published");
+          client.publish("test", "Hello mqtt from js");
+        }
+      });
+    });
+
+    // Receive messages
+    client.on("message", function (topic, message) {
+      // message is Buffer
+      output_console.innerHTML =
+        message.toString() + "<br>" + output_console.innerHTML;
+      // client.end();
+    });
+  </script>
+</html>
